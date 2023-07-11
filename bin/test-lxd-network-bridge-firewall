@@ -32,25 +32,38 @@ trap cleanup EXIT HUP INT TERM
 # Wait for snapd seeding
 waitSnapdSeed
 
-# Configure to use the proxy
-curl -s http://canonical-lxd.stgraber.org/config/snapd.sh | sh
+# EDIT: No snap proxy
+# # Configure to use the proxy
+# curl -s http://canonical-lxd.stgraber.org/config/snapd.sh | sh
 
+# EDIT: LXD already installed (side loaded)
 # Install LXD
-while [ -e /usr/bin/lxd ]; do
-    apt-get remove --purge --yes lxd lxd-client lxcfs liblxc1
-done
-apt-get remove --purge cloud-init --yes
-snap remove lxd || true
-snap install lxd --channel=latest/edge
-lxd waitready --timeout=300
+# while [ -e /usr/bin/lxd ]; do
+#     apt-get remove --purge --yes lxd lxd-client lxcfs liblxc1
+# done
+# apt-get remove --purge cloud-init --yes
+# snap remove lxd || true
+# snap install lxd --channel=latest/edge
+# lxd waitready --timeout=300
+
+apt-get install jq --yes
+
+# EDIT: Remove and delete the lxdbr0 network that was created during lxd init --auto as we will create a new one for this test.
+lxc profile device remove default eth0
+lxc network delete lxdbr0
 
 # Configure LXD
-lxc storage create default zfs
+
+# EDIT : Default ZFS storage pool already exists from lxd init --auto
+#lxc storage create default zfs
+
 lxc network create lxdbr0 \
     ipv4.address=192.0.2.1/24 \
     ipv6.address=2001:db8::1/64 \
     ipv4.dhcp.ranges=192.0.2.2-192.0.2.199
-lxc profile device add default root disk path=/ pool=default
+
+# EDIT: Root disk device already exists on default profile.
+#lxc profile device add default root disk path=/ pool=default
 
 echo "=> Setting up firewall tooling and checking versions"
 apt-get install --no-install-recommends --yes nftables iptables ebtables
